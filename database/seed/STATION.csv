@@ -1,0 +1,9 @@
+StationID,Name,City,Latitude,Longitude,Address,IsActive
+101,Central Hub,Metro City,40.7128,-74.0060,100 Grand Concourse,1
+102,Financial Center,Metro City,40.7075,-74.0090,25 Wall St,1
+103,Midtown West,Metro City,40.7549,-73.9840,400 8th Ave,1
+104,Metro North,Metro City,40.7890,-73.9500,850 Grand Blvd,1
+105,Tech Park,Metro City,40.7300,-73.9950,50 Innovation Way,1
+106,Harbor View,Metro City,40.6900,-74.0200,12 Ferry Terminal Rd,1
+107,University Village,Metro City,40.7295,-73.9965,30 Scholars Plaza,1
+108,Airport Terminal 1,Metro City,40.6413,-73.7781,Airport Pkwy Bldg 1,1

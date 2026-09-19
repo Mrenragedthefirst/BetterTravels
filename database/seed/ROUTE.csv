@@ -1,0 +1,5 @@
+RouteID,Name,Mode,Operator,IsActive
+1,Red Metro Line,Metro,City Transit Authority,1
+2,Blue Metro Line,Metro,City Transit Authority,1
+3,Express Commuter Train,Train,Regional Rail Corp,1
+4,Downtown Express Bus 101,Bus,Metro Bus Systems,1

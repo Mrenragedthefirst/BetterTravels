@@ -1,0 +1,3 @@
+AffectedSegmentID,IncidentID,SegmentID,StatusType,DelayMinutes
+8101,8001,5003,Delayed,15
+8102,8003,5008,Suspended,999

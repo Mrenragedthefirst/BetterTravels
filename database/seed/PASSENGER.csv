@@ -1,0 +1,5 @@
+PassengerID,Email,FirstName,LastName,DateOfBirth,Phone,RegistrationDate
+10001,alice.chen@example.com,Alice,Chen,1998-04-12,+15550101,2026-02-15 09:20:00
+10002,marcus.vance@example.com,Marcus,Vance,1972-11-03,+15550102,2026-03-01 14:10:00
+10003,elena.rostova@example.com,Elena,Rostova,2004-08-25,+15550103,2026-05-18 11:45:00
+10004,david.kim@example.com,David,Kim,1958-01-30,+15550104,2026-06-10 16:30:00

@@ -1,0 +1,3 @@
+AffectedStationID,IncidentID,StationID,StatusType,Reason
+8201,8002,104,PartiallyClosed,Escalator outage affecting Platform 1A
+8202,8003,104,Congested,Passenger backlog due to suspended train service

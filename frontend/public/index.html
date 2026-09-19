@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BetterTravel — Multi-Modal Transit</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ── NAV ─────────────────────────────────────────────────────────────── -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span class="logo">🚇</span>
+      <span class="brand-name">BetterTravel</span>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" id="tab-user"  onclick="switchView('user')">🧑 Passenger Portal</button>
+      <button class="nav-tab"        id="tab-admin" onclick="switchView('admin')">🛠 Admin Console</button>
+    </div>
+    <div class="nav-status">
+      <span class="dot" id="status-dot"></span>
+      <span id="status-text">Connecting…</span>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!--  USER PORTAL                                                          -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <div id="view-user" class="view active">
+
+    <!-- Live Alerts Banner -->
+    <div id="disruption-banner" class="disruption-banner hidden">
+      <span class="alert-icon">⚠️</span>
+      <span id="disruption-text">Loading service alerts…</span>
+    </div>
+
+    <div class="container">
+
+      <!-- ── Route Planner Card ─────────────────────────────────────────── -->
+      <div class="card" id="planner-card">
+        <h2 class="card-title">Plan Your Journey</h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>From Station</label>
+            <select id="sel-origin"  class="select-styled">
+              <option value="">Loading…</option>
+            </select>
+          </div>
+          <div class="swap-btn-wrap">
+            <button class="swap-btn" onclick="swapStations()" title="Swap stations">⇅</button>
+          </div>
+          <div class="form-group">
+            <label>To Station</label>
+            <select id="sel-dest" class="select-styled">
+              <option value="">Loading…</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row secondary">
+          <div class="form-group">
+            <label>Fare Class</label>
+            <select id="sel-fareclass" class="select-styled"></select>
+          </div>
+          <div class="form-group">
+            <label>Max Transfers</label>
+            <select id="sel-transfers" class="select-styled">
+              <option value="1">1 Transfer</option>
+              <option value="2">2 Transfers</option>
+              <option value="3" selected>3 Transfers</option>
+            </select>
+          </div>
+          <div class="form-group btn-group">
+            <button class="btn-primary" onclick="findRoutes()">Search Routes</button>
+          </div>
+        </div>
+
+        <div id="routes-result" class="routes-result hidden"></div>
+      </div>
+
+      <!-- ── SmartCard Panel ────────────────────────────────────────────── -->
+      <div class="side-panel">
+
+        <div class="card" id="card-wallet-card">
+          <h2 class="card-title">SmartCard & Wallet</h2>
+          <div class="form-row">
+            <input id="input-cardnum" type="text" class="input-styled" placeholder="Card Number (MC-9901-…)" />
+            <button class="btn-secondary" onclick="lookupCard()">Lookup</button>
+          </div>
+          <div id="wallet-info" class="wallet-info hidden"></div>
+
+          <div id="tapin-tapout" class="tap-panel hidden">
+            <div class="form-row">
+              <select id="tap-station" class="select-styled">
+                <option value="">Select Station</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <button class="btn-green"  onclick="tapIn()">Tap In</button>
+              <button class="btn-orange" onclick="tapOut()">Tap Out</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="history-card">
+          <h2 class="card-title">Travel History</h2>
+          <div id="history-list" class="history-list">
+            <p class="placeholder-text">Look up a card to see history.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!--  ADMIN CONSOLE                                                        -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <div id="view-admin" class="view hidden">
+    <div class="container admin-container">
+
+      <!-- ── Report Incident ───────────────────────────────────────────── -->
+      <div class="card">
+        <h2 class="card-title">🚨 Report New Incident</h2>
+        <div class="form-group">
+          <label>Title *</label>
+          <input id="inc-title" type="text" class="input-styled" placeholder="e.g. Signal Failure at Central Hub" />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="inc-desc" class="input-styled textarea-styled" rows="3" placeholder="Detailed description of the incident…"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Severity *</label>
+            <select id="inc-severity" class="select-styled">
+              <option value="Minor">Minor</option>
+              <option value="Moderate">Moderate</option>
+              <option value="Major">Major</option>
+              <option value="Critical">Critical</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Affected Segment (optional)</label>
+            <select id="inc-segment" class="select-styled">
+              <option value="">None</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Affected Station (optional)</label>
+            <select id="inc-station" class="select-styled">
+              <option value="">None</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status Type</label>
+            <select id="inc-statustype" class="select-styled">
+              <option value="Delayed">Delayed</option>
+              <option value="Suspended">Suspended</option>
+              <option value="Rerouted">Rerouted</option>
+              <option value="PartiallyClosed">Partially Closed</option>
+              <option value="Closed">Closed</option>
+              <option value="Congested">Congested</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Delay (minutes)</label>
+            <input id="inc-delay" type="number" class="input-styled" value="15" min="0" max="999" />
+          </div>
+        </div>
+        <button class="btn-danger" onclick="reportIncident()">🚨 Submit Incident</button>
+        <div id="incident-result" class="result-msg hidden"></div>
+      </div>
+
+      <!-- ── Active Incidents Table ─────────────────────────────────────── -->
+      <div class="card">
+        <h2 class="card-title">📋 All Incidents
+          <button class="btn-refresh" onclick="loadAdminIncidents()">↻ Refresh</button>
+        </h2>
+        <div id="incidents-table-wrap" class="table-wrap">
+          <p class="placeholder-text">Loading…</p>
+        </div>
+      </div>
+
+      <!-- ── Wallet Top-Up ─────────────────────────────────────────────── -->
+      <div class="card">
+        <h2 class="card-title">💳 Kiosk Wallet Top-Up</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Card Number *</label>
+            <input id="topup-card"   type="text"   class="input-styled" placeholder="MC-9901-4412-0001" />
+          </div>
+          <div class="form-group">
+            <label>Amount ($) *</label>
+            <input id="topup-amount" type="number" class="input-styled" placeholder="20.00" min="1" max="500" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label>Reference</label>
+            <input id="topup-ref"    type="text"   class="input-styled" placeholder="KIOSK-001" />
+          </div>
+          <div class="form-group btn-group">
+            <button class="btn-primary" onclick="topUpWallet()">Add Funds</button>
+          </div>
+        </div>
+        <div id="topup-result" class="result-msg hidden"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Toast Notification ────────────────────────────────────────────────── -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

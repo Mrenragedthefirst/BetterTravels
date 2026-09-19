@@ -1,0 +1,4 @@
+IncidentID,Title,Description,StartTime,EndTime,Severity
+8001,Signal Failure at Downtown Tunnel,Track circuit fault between Central and Financial Center,2026-09-19 07:30:00,2026-09-19 12:00:00,Major
+8002,Escalator Maintenance,North concourse escalator undergoing overhaul,2026-09-18 22:00:00,2026-09-20 06:00:00,Minor
+8003,Express Track Flooding,Flash flood warning impacting Commuter Train,2026-09-19 08:00:00,2026-09-19 10:30:00,Critical

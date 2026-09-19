@@ -1,0 +1,5 @@
+FareClassID,Name,DiscountPercentage,RequiresVerification,IsActive
+1,Standard Adult,0.00,0,1
+2,Student,30.00,1,1
+3,Senior Citizen,50.00,1,1
+4,Child Under 12,100.00,0,1

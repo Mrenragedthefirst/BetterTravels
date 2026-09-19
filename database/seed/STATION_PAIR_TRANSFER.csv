@@ -1,0 +1,5 @@
+TransferID,FromStationID,ToStationID,WalkingDistance,WalkingTime,IsDirectConnection
+6001,105,107,180,3,1
+6002,107,105,180,3,1
+6003,102,106,550,8,0
+6004,106,102,550,8,0

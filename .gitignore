@@ -1,0 +1,12 @@
+# Node modules
+node_modules/
+
+# Environment variables (keep your database passwords safe!)
+.env
+
+# Log files
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
