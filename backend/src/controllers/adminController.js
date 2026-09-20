@@ -2,8 +2,8 @@ const db = require('../config/database');
 const oracledb = db.oracledb;
 
 /**
- * Controller for Admin Portal: Provides direct management of incidents,
- * network status, and kiosk wallet operations using PKG_BETTERTRAVEL_ADMIN.
+ * Controller for Admin Portal: Provides direct management of stations,
+ * incidents, network status, and kiosk wallet operations using PKG_BETTERTRAVEL_ADMIN.
  */
 
 // 1. Get all incidents (Active & Past)
@@ -37,7 +37,7 @@ exports.getSegments = async (req, res) => {
       `SELECT 
         s.SegmentID,
         r.Name AS RouteName,
-        r."Mode" AS Mode,
+        r."Mode" AS "MODE",
         st_from.Name AS FromStation,
         st_to.Name AS ToStation,
         s.Distance,
@@ -201,5 +201,155 @@ exports.topUpWallet = async (req, res) => {
     });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
+  }
+};
+
+// 6. Add Station
+exports.addStation = async (req, res) => {
+  try {
+    const { name, city, latitude, longitude, address } = req.body;
+    if (!name || !city || latitude === undefined || longitude === undefined) {
+      return res.status(400).json({ success: false, error: 'Station Name, City, Latitude, and Longitude are required.' });
+    }
+
+    const sql = `
+      BEGIN
+        PKG_BETTERTRAVEL_ADMIN.PRC_ADD_STATION(
+          p_name       => :p_name,
+          p_city       => :p_city,
+          p_lat        => :p_lat,
+          p_lng        => :p_lng,
+          p_address    => :p_address,
+          o_station_id => :o_station_id
+        );
+      END;
+    `;
+
+    const binds = {
+      p_name: name,
+      p_city: city,
+      p_lat: parseFloat(latitude),
+      p_lng: parseFloat(longitude),
+      p_address: address || '',
+      o_station_id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }
+    };
+
+    const result = await db.execute(sql, binds, { autoCommit: true });
+
+    res.json({
+      success: true,
+      message: `Station "${name}" successfully registered with ID ${result.outBinds.o_station_id}.`,
+      stationId: result.outBinds.o_station_id
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// 7. Get All Stations (including address and active status)
+exports.getStations = async (req, res) => {
+  try {
+    const result = await db.execute(
+      `SELECT StationID, Name, City, Latitude, Longitude, Address, IsActive
+       FROM STATION
+       ORDER BY StationID ASC`
+    );
+    res.json({ success: true, count: result.rows.length, data: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// 8. Toggle Station Active / Inactive
+exports.toggleStation = async (req, res) => {
+  try {
+    const stationId = parseInt(req.params.stationId, 10);
+    const { isActive } = req.body;
+    if (!stationId || isActive === undefined) {
+      return res.status(400).json({ success: false, error: 'stationId and isActive (0 or 1) are required.' });
+    }
+    await db.execute(
+      `UPDATE STATION SET IsActive = :isActive WHERE StationID = :stationId`,
+      { isActive: isActive ? 1 : 0, stationId },
+      { autoCommit: true }
+    );
+    res.json({ success: true, message: `Station #${stationId} ${isActive ? 'activated' : 'deactivated'}.` });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// 9. Get all walking transfers (with station names joined)
+exports.getTransfers = async (req, res) => {
+  try {
+    const result = await db.execute(
+      `SELECT 
+         t.TransferID,
+         t.FromStationID,
+         sf.Name AS FromStation,
+         t.ToStationID,
+         st.Name AS ToStation,
+         t.WalkingDistance,
+         t.WalkingTime,
+         t.IsDirectConnection
+       FROM STATION_PAIR_TRANSFER t
+       JOIN STATION sf ON t.FromStationID = sf.StationID
+       JOIN STATION st ON t.ToStationID   = st.StationID
+       ORDER BY t.TransferID ASC`
+    );
+    res.json({ success: true, count: result.rows.length, data: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// 10. Add walking transfer — inserts both directions (A→B and B→A) in one transaction
+exports.addTransfer = async (req, res) => {
+  const conn = await db.oracledb.getConnection();
+  try {
+    const { fromStationId, toStationId, walkingDistance, walkingTime } = req.body;
+
+    if (!fromStationId || !toStationId || !walkingDistance || !walkingTime) {
+      return res.status(400).json({ success: false, error: 'fromStationId, toStationId, walkingDistance, and walkingTime are required.' });
+    }
+    if (parseInt(fromStationId, 10) === parseInt(toStationId, 10)) {
+      return res.status(400).json({ success: false, error: 'From and To stations must be different.' });
+    }
+
+    const fromId = parseInt(fromStationId, 10);
+    const toId   = parseInt(toStationId, 10);
+    const dist   = parseInt(walkingDistance, 10);
+    const time   = parseInt(walkingTime, 10);
+
+    // Insert A -> B
+    await conn.execute(
+      `INSERT INTO STATION_PAIR_TRANSFER (FromStationID, ToStationID, WalkingDistance, WalkingTime, IsDirectConnection)
+       VALUES (:from, :to, :dist, :time, 1)`,
+      { from: fromId, to: toId, dist, time }
+    );
+
+    // Insert B -> A (reverse leg, same values)
+    await conn.execute(
+      `INSERT INTO STATION_PAIR_TRANSFER (FromStationID, ToStationID, WalkingDistance, WalkingTime, IsDirectConnection)
+       VALUES (:from, :to, :dist, :time, 1)`,
+      { from: toId, to: fromId, dist, time }
+    );
+
+    await conn.commit();
+
+    res.json({
+      success: true,
+      message: `Walking transfer registered between stations #${fromId} and #${toId} (${time} min, ${dist}m, bidirectional).`
+    });
+  } catch (err) {
+    await conn.rollback();
+    // ORA-00001 = unique constraint — pair already exists
+    if (err.errorNum === 1) {
+      res.status(409).json({ success: false, error: 'A walking transfer between these stations already exists.' });
+    } else {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  } finally {
+    await conn.close();
   }
 };

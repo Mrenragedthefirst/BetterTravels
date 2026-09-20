@@ -1,6 +1,8 @@
+SET DEFINE OFF;
+SET SQLBLANKLINES ON;
 -- ============================================================================
 -- BETTERTRAVEL: MULTI-MODAL TRANSIT SYSTEM
--- SCRIPT 05: RECURSIVE CTE ROUTING ENGINE & FARE DEDUCTION
+-- SCRIPT 05: RECURSIVE CTE ROUTING ENGINE AND FARE DEDUCTION
 -- Implements Oracle Recursive CTE graph traversal with live disruption avoidance,
 -- transfer penalty calculation, and transactional ticketing/smartcard operations.
 -- ============================================================================
@@ -79,6 +81,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_TRANSIT_ROUTER AS
             WITH 
             -- 1. Active physical edges (excluding suspended segments)
             ACTIVE_NETWORK_EDGES AS (
+                -- Forward Direction
                 SELECT 
                     seg.SegmentID,
                     seg.RouteID,
@@ -103,11 +106,11 @@ CREATE OR REPLACE PACKAGE BODY PKG_TRANSIT_ROUTER AS
                     AND sf.IsActive = 1
                     AND SYSTIMESTAMP BETWEEN sf.ValidFrom AND NVL(sf.ValidTo, SYSTIMESTAMP + INTERVAL '1' DAY)
                 LEFT JOIN (
-                    -- Active disruptions
+                    -- Active disruptions: started in past/present, not yet resolved
                     SELECT a.SegmentID, a.StatusType, a.DelayMinutes
                     FROM AFFECTEDSEGMENT a
                     JOIN INCIDENT i ON a.IncidentID = i.IncidentID
-                    WHERE SYSTIMESTAMP BETWEEN i.StartTime AND NVL(i.EndTime, SYSTIMESTAMP + INTERVAL '1' DAY)
+                    WHERE i.StartTime <= SYSTIMESTAMP AND (i.EndTime IS NULL OR i.EndTime > SYSTIMESTAMP)
                 ) aff ON seg.SegmentID = aff.SegmentID
                 WHERE seg.IsActive = 1
                   -- BYPASS SUSPENDED EDGES COMPLETELY
@@ -117,13 +120,58 @@ CREATE OR REPLACE PACKAGE BODY PKG_TRANSIT_ROUTER AS
                       SELECT afs.StationID FROM AFFECTEDSTATION afs
                       JOIN INCIDENT inc ON afs.IncidentID = inc.IncidentID
                       WHERE afs.StatusType = 'Closed'
-                        AND SYSTIMESTAMP BETWEEN inc.StartTime AND NVL(inc.EndTime, SYSTIMESTAMP + INTERVAL '1' DAY)
+                        AND inc.StartTime <= SYSTIMESTAMP AND (inc.EndTime IS NULL OR inc.EndTime > SYSTIMESTAMP)
                   )
                   AND st_to.StationID NOT IN (
                       SELECT afs.StationID FROM AFFECTEDSTATION afs
                       JOIN INCIDENT inc ON afs.IncidentID = inc.IncidentID
                       WHERE afs.StatusType = 'Closed'
-                        AND SYSTIMESTAMP BETWEEN inc.StartTime AND NVL(inc.EndTime, SYSTIMESTAMP + INTERVAL '1' DAY)
+                        AND inc.StartTime <= SYSTIMESTAMP AND (inc.EndTime IS NULL OR inc.EndTime > SYSTIMESTAMP)
+                  )
+                UNION ALL
+                -- Return / Inbound Direction (Transit corridors are bidirectional)
+                SELECT 
+                    seg.SegmentID,
+                    seg.RouteID,
+                    r.Name AS RouteName,
+                    r."Mode" AS TransitMode,
+                    st_to.StationID AS FromStationID,
+                    st_to.Name AS FromStationName,
+                    st_from.StationID AS ToStationID,
+                    st_from.Name AS ToStationName,
+                    seg.Distance,
+                    seg.ScheduledTime,
+                    NVL(aff.DelayMinutes, 0) AS DelayMinutes,
+                    (seg.ScheduledTime + NVL(aff.DelayMinutes, 0)) AS EdgeDuration,
+                    NVL(sf.BaseAmount, 2.00) AS SegmentFare
+                FROM SEGMENT seg
+                JOIN ROUTE r ON seg.RouteID = r.RouteID AND r.IsActive = 1
+                JOIN ROUTESTOP rs_from ON seg.FromRouteStopID = rs_from.RouteStopID AND rs_from.IsActive = 1
+                JOIN STATION st_from ON rs_from.StationID = st_from.StationID AND st_from.IsActive = 1
+                JOIN ROUTESTOP rs_to ON seg.ToRouteStopID = rs_to.RouteStopID AND rs_to.IsActive = 1
+                JOIN STATION st_to ON rs_to.StationID = st_to.StationID AND st_to.IsActive = 1
+                LEFT JOIN SEGMENTFARE sf ON seg.SegmentID = sf.SegmentID 
+                    AND sf.IsActive = 1
+                    AND SYSTIMESTAMP BETWEEN sf.ValidFrom AND NVL(sf.ValidTo, SYSTIMESTAMP + INTERVAL '1' DAY)
+                LEFT JOIN (
+                    SELECT a.SegmentID, a.StatusType, a.DelayMinutes
+                    FROM AFFECTEDSEGMENT a
+                    JOIN INCIDENT i ON a.IncidentID = i.IncidentID
+                    WHERE i.StartTime <= SYSTIMESTAMP AND (i.EndTime IS NULL OR i.EndTime > SYSTIMESTAMP)
+                ) aff ON seg.SegmentID = aff.SegmentID
+                WHERE seg.IsActive = 1
+                  AND (aff.StatusType IS NULL OR aff.StatusType <> 'Suspended')
+                  AND st_from.StationID NOT IN (
+                      SELECT afs.StationID FROM AFFECTEDSTATION afs
+                      JOIN INCIDENT inc ON afs.IncidentID = inc.IncidentID
+                      WHERE afs.StatusType = 'Closed'
+                        AND inc.StartTime <= SYSTIMESTAMP AND (inc.EndTime IS NULL OR inc.EndTime > SYSTIMESTAMP)
+                  )
+                  AND st_to.StationID NOT IN (
+                      SELECT afs.StationID FROM AFFECTEDSTATION afs
+                      JOIN INCIDENT inc ON afs.IncidentID = inc.IncidentID
+                      WHERE afs.StatusType = 'Closed'
+                        AND inc.StartTime <= SYSTIMESTAMP AND (inc.EndTime IS NULL OR inc.EndTime > SYSTIMESTAMP)
                   )
             ),
             
@@ -458,3 +506,4 @@ CREATE OR REPLACE PACKAGE BODY PKG_TRANSIT_ROUTER AS
 
 END PKG_TRANSIT_ROUTER;
 /
+exit;

@@ -3,217 +3,557 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BetterTravel — Multi-Modal Transit</title>
+  <title>BetterTravel Transit System</title>
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-  <!-- ── NAV ─────────────────────────────────────────────────────────────── -->
-  <nav class="navbar">
-    <div class="nav-brand">
-      <span class="logo">🚇</span>
-      <span class="brand-name">BetterTravel</span>
-    </div>
-    <div class="nav-tabs">
-      <button class="nav-tab active" id="tab-user"  onclick="switchView('user')">🧑 Passenger Portal</button>
-      <button class="nav-tab"        id="tab-admin" onclick="switchView('admin')">🛠 Admin Console</button>
-    </div>
-    <div class="nav-status">
-      <span class="dot" id="status-dot"></span>
-      <span id="status-text">Connecting…</span>
-    </div>
-  </nav>
-
-  <!-- ══════════════════════════════════════════════════════════════════════ -->
-  <!--  USER PORTAL                                                          -->
-  <!-- ══════════════════════════════════════════════════════════════════════ -->
-  <div id="view-user" class="view active">
-
-    <!-- Live Alerts Banner -->
-    <div id="disruption-banner" class="disruption-banner hidden">
-      <span class="alert-icon">⚠️</span>
-      <span id="disruption-text">Loading service alerts…</span>
-    </div>
-
-    <div class="container">
-
-      <!-- ── Route Planner Card ─────────────────────────────────────────── -->
-      <div class="card" id="planner-card">
-        <h2 class="card-title">Plan Your Journey</h2>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>From Station</label>
-            <select id="sel-origin"  class="select-styled">
-              <option value="">Loading…</option>
-            </select>
-          </div>
-          <div class="swap-btn-wrap">
-            <button class="swap-btn" onclick="swapStations()" title="Swap stations">⇅</button>
-          </div>
-          <div class="form-group">
-            <label>To Station</label>
-            <select id="sel-dest" class="select-styled">
-              <option value="">Loading…</option>
-            </select>
-          </div>
+  <!-- Top Navigation Header -->
+  <header class="top-nav">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <div class="brand-mark">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="3" width="16" height="16" rx="2"/>
+            <path d="M4 11h16"/>
+            <path d="M12 3v8"/>
+            <path d="m8 19-2 3"/>
+            <path d="m16 19 2 3"/>
+            <circle cx="8" cy="15" r="1"/>
+            <circle cx="16" cy="15" r="1"/>
+          </svg>
         </div>
-
-        <div class="form-row secondary">
-          <div class="form-group">
-            <label>Fare Class</label>
-            <select id="sel-fareclass" class="select-styled"></select>
-          </div>
-          <div class="form-group">
-            <label>Max Transfers</label>
-            <select id="sel-transfers" class="select-styled">
-              <option value="1">1 Transfer</option>
-              <option value="2">2 Transfers</option>
-              <option value="3" selected>3 Transfers</option>
-            </select>
-          </div>
-          <div class="form-group btn-group">
-            <button class="btn-primary" onclick="findRoutes()">Search Routes</button>
-          </div>
+        <div class="brand-text">
+          <span class="brand-title">BetterTravel</span>
+          <span class="brand-subtitle">Transit Operations &amp; Routing</span>
         </div>
-
-        <div id="routes-result" class="routes-result hidden"></div>
       </div>
 
-      <!-- ── SmartCard Panel ────────────────────────────────────────────── -->
-      <div class="side-panel">
+      <!-- Segmented View Switcher -->
+      <nav class="view-switcher" role="tablist">
+        <button class="switch-btn active" id="tab-btn-user" onclick="navigateView('user')" role="tab" aria-selected="true">
+          Passenger Portal
+        </button>
+        <button class="switch-btn" id="tab-btn-admin" onclick="navigateView('admin')" role="tab" aria-selected="false">
+          Admin Console
+        </button>
+      </nav>
 
-        <div class="card" id="card-wallet-card">
-          <h2 class="card-title">SmartCard & Wallet</h2>
-          <div class="form-row">
-            <input id="input-cardnum" type="text" class="input-styled" placeholder="Card Number (MC-9901-…)" />
-            <button class="btn-secondary" onclick="lookupCard()">Lookup</button>
-          </div>
-          <div id="wallet-info" class="wallet-info hidden"></div>
-
-          <div id="tapin-tapout" class="tap-panel hidden">
-            <div class="form-row">
-              <select id="tap-station" class="select-styled">
-                <option value="">Select Station</option>
-              </select>
-            </div>
-            <div class="form-row">
-              <button class="btn-green"  onclick="tapIn()">Tap In</button>
-              <button class="btn-orange" onclick="tapOut()">Tap Out</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" id="history-card">
-          <h2 class="card-title">Travel History</h2>
-          <div id="history-list" class="history-list">
-            <p class="placeholder-text">Look up a card to see history.</p>
-          </div>
-        </div>
-
+      <!-- System Health Indicator -->
+      <div class="system-status">
+        <span class="status-indicator-ring">
+          <span class="status-dot" id="system-status-dot"></span>
+        </span>
+        <span class="status-label" id="system-status-text">Connected</span>
       </div>
+    </div>
+  </header>
+
+  <!-- Network Advisory Banner -->
+  <div id="service-advisory-bar" class="advisory-bar is-hidden">
+    <div class="advisory-content">
+      <span class="advisory-tag">Service Alert</span>
+      <span id="service-advisory-message" class="advisory-message">Monitoring network operations...</span>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════════════════ -->
-  <!--  ADMIN CONSOLE                                                        -->
-  <!-- ══════════════════════════════════════════════════════════════════════ -->
-  <div id="view-admin" class="view hidden">
-    <div class="container admin-container">
+  <!-- Main Content Container -->
+  <main class="app-main">
 
-      <!-- ── Report Incident ───────────────────────────────────────────── -->
-      <div class="card">
-        <h2 class="card-title">🚨 Report New Incident</h2>
-        <div class="form-group">
-          <label>Title *</label>
-          <input id="inc-title" type="text" class="input-styled" placeholder="e.g. Signal Failure at Central Hub" />
+    <!-- ================================================================== -->
+    <!-- PASSENGER PORTAL VIEW                                              -->
+    <!-- ================================================================== -->
+    <section id="portal-user" class="portal-view active">
+      <div class="grid-layout passenger-grid">
+
+        <!-- Journey Planner Column -->
+        <div class="column-main">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h1 class="panel-title">Multi-Modal Journey Planner</h1>
+                <p class="panel-description">Calculate optimal paths across Metro, Commuter Train, and Bus networks with live disruption avoidance.</p>
+              </div>
+            </div>
+
+            <!-- Route Query Form -->
+            <div class="form-grid">
+              <div class="form-field">
+                <label for="sel-origin" class="field-label">Origin Station</label>
+                <select id="sel-origin" class="form-control">
+                  <option value="">Loading network stations...</option>
+                </select>
+              </div>
+
+              <div class="swap-action">
+                <button type="button" class="btn-icon" onclick="swapSelectedStations()" title="Swap Origin and Destination" aria-label="Swap Stations">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="form-field">
+                <label for="sel-dest" class="field-label">Destination Station</label>
+                <select id="sel-dest" class="form-control">
+                  <option value="">Loading network stations...</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-grid secondary-filters">
+              <div class="form-field">
+                <label for="sel-fareclass" class="field-label">Passenger Fare Class</label>
+                <select id="sel-fareclass" class="form-control"></select>
+              </div>
+
+              <div class="form-field">
+                <label for="sel-transfers" class="field-label">Maximum Transfers</label>
+                <select id="sel-transfers" class="form-control">
+                  <option value="1">Up to 1 Transfer</option>
+                  <option value="2">Up to 2 Transfers</option>
+                  <option value="3" selected>Up to 3 Transfers</option>
+                </select>
+              </div>
+
+              <div class="form-field action-field">
+                <button type="button" class="btn btn-primary" onclick="searchTransitRoutes()">
+                  Search Routes
+                </button>
+              </div>
+            </div>
+
+            <!-- Routing Engine Output -->
+            <div id="route-results-container" class="results-container is-hidden">
+              <div class="results-meta">
+                <span class="results-count" id="results-count-label">Available Routes</span>
+              </div>
+              <div id="route-cards-list" class="route-cards-list"></div>
+            </div>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Description</label>
-          <textarea id="inc-desc" class="input-styled textarea-styled" rows="3" placeholder="Detailed description of the incident…"></textarea>
+
+        <!-- Passenger Ticketing Column -->
+        <div class="column-side">
+          
+          <!-- SmartCard Wallet Card -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <h2 class="panel-title">SmartCard Wallet</h2>
+            </div>
+            
+            <div class="card-lookup-group">
+              <input type="text" id="input-card-number" class="form-control" placeholder="Card Number (e.g. MC-9901-4412-0001)" />
+              <button type="button" class="btn btn-secondary" onclick="lookupSmartCard()">Lookup</button>
+            </div>
+
+            <!-- Wallet Information Display -->
+            <div id="card-wallet-display" class="wallet-data-box is-hidden">
+              <div class="wallet-balance-row">
+                <span class="wallet-card-name" id="cardholder-name">—</span>
+                <span class="wallet-card-status-badge" id="card-status-pill">Active</span>
+              </div>
+              <div class="wallet-amount" id="cardholder-balance">$0.00</div>
+              <div class="wallet-subtext" id="cardholder-details">—</div>
+
+              <!-- Tap In / Tap Out Terminal Simulator -->
+              <div class="terminal-box">
+                <div class="terminal-title">Station Gate Simulator</div>
+                <div class="form-field">
+                  <select id="tap-station-selector" class="form-control">
+                    <option value="">Select Gate Station</option>
+                  </select>
+                </div>
+                <div class="gate-actions">
+                  <button type="button" class="btn btn-success" onclick="executeTapIn()">Tap In</button>
+                  <button type="button" class="btn btn-warning" onclick="executeTapOut()">Tap Out</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Journey History Card -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <h2 class="panel-title">Recent Trips</h2>
+            </div>
+            <div id="passenger-history-list" class="history-container">
+              <p class="empty-state-text">Lookup a SmartCard to view recorded journeys.</p>
+            </div>
+          </div>
+
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Severity *</label>
-            <select id="inc-severity" class="select-styled">
-              <option value="Minor">Minor</option>
-              <option value="Moderate">Moderate</option>
-              <option value="Major">Major</option>
-              <option value="Critical">Critical</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Affected Segment (optional)</label>
-            <select id="inc-segment" class="select-styled">
-              <option value="">None</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Affected Station (optional)</label>
-            <select id="inc-station" class="select-styled">
-              <option value="">None</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Status Type</label>
-            <select id="inc-statustype" class="select-styled">
-              <option value="Delayed">Delayed</option>
-              <option value="Suspended">Suspended</option>
-              <option value="Rerouted">Rerouted</option>
-              <option value="PartiallyClosed">Partially Closed</option>
-              <option value="Closed">Closed</option>
-              <option value="Congested">Congested</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Delay (minutes)</label>
-            <input id="inc-delay" type="number" class="input-styled" value="15" min="0" max="999" />
-          </div>
-        </div>
-        <button class="btn-danger" onclick="reportIncident()">🚨 Submit Incident</button>
-        <div id="incident-result" class="result-msg hidden"></div>
+
       </div>
+    </section>
 
-      <!-- ── Active Incidents Table ─────────────────────────────────────── -->
-      <div class="card">
-        <h2 class="card-title">📋 All Incidents
-          <button class="btn-refresh" onclick="loadAdminIncidents()">↻ Refresh</button>
-        </h2>
-        <div id="incidents-table-wrap" class="table-wrap">
-          <p class="placeholder-text">Loading…</p>
-        </div>
-      </div>
+    <!-- ================================================================== -->
+    <!-- ADMIN CONSOLE VIEW                                                 -->
+    <!-- ================================================================== -->
+    <section id="portal-admin" class="portal-view">
+      <div class="admin-wrapper">
 
-      <!-- ── Wallet Top-Up ─────────────────────────────────────────────── -->
-      <div class="card">
-        <h2 class="card-title">💳 Kiosk Wallet Top-Up</h2>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Card Number *</label>
-            <input id="topup-card"   type="text"   class="input-styled" placeholder="MC-9901-4412-0001" />
-          </div>
-          <div class="form-group">
-            <label>Amount ($) *</label>
-            <input id="topup-amount" type="number" class="input-styled" placeholder="20.00" min="1" max="500" step="0.01" />
-          </div>
-          <div class="form-group">
-            <label>Reference</label>
-            <input id="topup-ref"    type="text"   class="input-styled" placeholder="KIOSK-001" />
-          </div>
-          <div class="form-group btn-group">
-            <button class="btn-primary" onclick="topUpWallet()">Add Funds</button>
+        <!-- Admin Auth Gate -->
+        <div id="admin-auth-gate" class="auth-gate is-hidden">
+          <div class="auth-gate-card">
+            <h2 class="auth-gate-title">Admin Access Required</h2>
+            <p class="auth-gate-sub">Enter the admin console token to proceed.</p>
+            <div class="card-lookup-group">
+              <input type="password" id="admin-token-input" class="form-control" placeholder="Admin token..." />
+              <button type="button" class="btn btn-primary" onclick="submitAdminToken()">Unlock</button>
+            </div>
+            <div id="auth-error-msg" class="feedback-banner error is-hidden"></div>
           </div>
         </div>
-        <div id="topup-result" class="result-msg hidden"></div>
+
+        <!-- Admin Content (shown after auth) -->
+        <div id="admin-content-area">
+
+          <!-- Admin Sub-Navigation Pills -->
+          <div class="admin-subnav">
+            <button class="subnav-pill active" onclick="switchAdminSection('stations')">Station Management</button>
+            <button class="subnav-pill" onclick="switchAdminSection('incidents')">Incident &amp; Disruptions</button>
+            <button class="subnav-pill" onclick="switchAdminSection('segments')">Network Segments</button>
+            <button class="subnav-pill" onclick="switchAdminSection('transfers')">Walking Transfers</button>
+            <button class="subnav-pill" onclick="switchAdminSection('topup')">Kiosk Top-Up</button>
+          </div>
+
+          <!-- Admin Section 1: Stations Management -->
+          <div id="admin-sec-stations" class="admin-tab-content active">
+            
+            <!-- Add Station Card -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title">Register New Station</h2>
+                  <p class="panel-description">Invokes PKG_BETTERTRAVEL_ADMIN.PRC_ADD_STATION to insert a new node into the spatial transit graph.</p>
+                </div>
+              </div>
+
+              <form id="form-add-station" onsubmit="handleCreateStation(event)">
+                <div class="form-grid three-cols">
+                  <div class="form-field">
+                    <label for="new-stat-name" class="field-label">Station Name *</label>
+                    <input type="text" id="new-stat-name" class="form-control" placeholder="e.g. Waterfront Plaza" required />
+                  </div>
+                  <div class="form-field">
+                    <label for="new-stat-city" class="field-label">City *</label>
+                    <input type="text" id="new-stat-city" class="form-control" placeholder="e.g. Metro City" value="Metro City" required />
+                  </div>
+                  <div class="form-field">
+                    <label for="new-stat-address" class="field-label">Address</label>
+                    <input type="text" id="new-stat-address" class="form-control" placeholder="e.g. 500 Harbor Drive" />
+                  </div>
+                </div>
+
+                <div class="form-grid two-cols">
+                  <div class="form-field">
+                    <label for="new-stat-lat" class="field-label">Latitude *</label>
+                    <input type="number" step="0.000001" id="new-stat-lat" class="form-control" placeholder="e.g. 40.7150" value="40.7150" required />
+                  </div>
+                  <div class="form-field">
+                    <label for="new-stat-lng" class="field-label">Longitude *</label>
+                    <input type="number" step="0.000001" id="new-stat-lng" class="form-control" placeholder="e.g. -74.0110" value="-74.0110" required />
+                  </div>
+                </div>
+
+                <div class="form-action-row">
+                  <button type="submit" class="btn btn-primary">Add Station to Database</button>
+                </div>
+                <div id="add-station-feedback" class="feedback-banner is-hidden"></div>
+              </form>
+            </div>
+
+            <!-- All Stations Table -->
+            <div class="panel-card">
+              <div class="panel-header between">
+                <div>
+                  <h2 class="panel-title">All Stations in Database</h2>
+                  <p class="panel-description">Directly queried from the STATION table. Use toggle to activate or deactivate stations from routing.</p>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="fetchAdminStationsTable()">Refresh List</button>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table" id="table-admin-stations">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Station Name</th>
+                      <th>City</th>
+                      <th>Coordinates</th>
+                      <th>Address</th>
+                      <th>Status</th>
+                      <th>Toggle</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody-admin-stations">
+                    <tr><td colspan="7" class="table-loading">Loading stations...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Admin Section 2: Incidents & Disruptions -->
+          <div id="admin-sec-incidents" class="admin-tab-content is-hidden">
+            
+            <!-- Report Disruption Card -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title">Report Network Disruption</h2>
+                  <p class="panel-description">Declare line delays, track maintenance, or station closures. Automatically propagates to the live routing engine.</p>
+                </div>
+              </div>
+
+              <form id="form-report-incident" onsubmit="handleReportIncident(event)">
+                <div class="form-grid two-cols">
+                  <div class="form-field">
+                    <label for="inc-title" class="field-label">Incident Title *</label>
+                    <input type="text" id="inc-title" class="form-control" placeholder="e.g. Signal Failure on Commuter Line" required />
+                  </div>
+                  <div class="form-field">
+                    <label for="inc-severity" class="field-label">Severity Level *</label>
+                    <select id="inc-severity" class="form-control" required>
+                      <option value="Minor">Minor</option>
+                      <option value="Moderate">Moderate</option>
+                      <option value="Major" selected>Major</option>
+                      <option value="Critical">Critical</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-field">
+                  <label for="inc-desc" class="field-label">Incident Description</label>
+                  <textarea id="inc-desc" class="form-control" rows="2" placeholder="Provide operational context for passengers and dispatchers..."></textarea>
+                </div>
+
+                <div class="form-grid three-cols">
+                  <div class="form-field">
+                    <label for="inc-segment" class="field-label">Disrupted Segment (Optional)</label>
+                    <select id="inc-segment" class="form-control">
+                      <option value="">None (Station or General)</option>
+                    </select>
+                  </div>
+                  <div class="form-field">
+                    <label for="inc-station" class="field-label">Disrupted Station (Optional)</label>
+                    <select id="inc-station" class="form-control">
+                      <option value="">None (Track or General)</option>
+                    </select>
+                  </div>
+                  <div class="form-field">
+                    <label for="inc-statustype" class="field-label">Status Type *</label>
+                    <select id="inc-statustype" class="form-control">
+                      <option value="Delayed" selected>Delayed</option>
+                      <option value="Suspended">Suspended (Avoid Line)</option>
+                      <option value="Rerouted">Rerouted</option>
+                      <option value="PartiallyClosed">Partially Closed</option>
+                      <option value="Closed">Closed</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-grid two-cols">
+                  <div class="form-field">
+                    <label for="inc-delay" class="field-label">Estimated Delay (Minutes)</label>
+                    <input type="number" id="inc-delay" class="form-control" value="20" min="0" max="999" />
+                  </div>
+                </div>
+
+                <div class="form-action-row">
+                  <button type="submit" class="btn btn-danger">Broadcast Incident</button>
+                </div>
+                <div id="incident-action-feedback" class="feedback-banner is-hidden"></div>
+              </form>
+            </div>
+
+            <!-- Incidents History Table -->
+            <div class="panel-card">
+              <div class="panel-header between">
+                <div>
+                  <h2 class="panel-title">System Incidents Log</h2>
+                  <p class="panel-description">Active incidents dynamically alter route cost and availability.</p>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="fetchAdminIncidentsTable()">Refresh Incidents</button>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table" id="table-admin-incidents">
+                  <thead>
+                    <tr>
+                      <th>Incident ID</th>
+                      <th>Title</th>
+                      <th>Severity</th>
+                      <th>Start Time</th>
+                      <th>End Time</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody-admin-incidents">
+                    <tr><td colspan="7" class="table-loading">Loading incident records...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Admin Section 3: Network Segments -->
+          <div id="admin-sec-segments" class="admin-tab-content is-hidden">
+            <div class="panel-card">
+              <div class="panel-header between">
+                <div>
+                  <h2 class="panel-title">Network Segment Topology</h2>
+                  <p class="panel-description">Tracks distance, scheduled travel time, and transit modes across all active routes.</p>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="fetchAdminSegmentsTable()">Refresh Segments</button>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table" id="table-admin-segments">
+                  <thead>
+                    <tr>
+                      <th>Segment ID</th>
+                      <th>Route</th>
+                      <th>Mode</th>
+                      <th>Origin Stop</th>
+                      <th>Destination Stop</th>
+                      <th>Distance</th>
+                      <th>Scheduled</th>
+                      <th>Operational</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody-admin-segments">
+                    <tr><td colspan="8" class="table-loading">Loading segments...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Admin Section 4: Walking Transfers -->
+          <div id="admin-sec-transfers" class="admin-tab-content is-hidden">
+
+            <!-- Add Transfer Form -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title">Register Walking Transfer Link</h2>
+                  <p class="panel-description">Links two stations via pedestrian connection. Both directions (A &rarr; B and B &rarr; A) are inserted atomically. Required to make newly added stations reachable in routing.</p>
+                </div>
+              </div>
+
+              <form id="form-add-transfer" onsubmit="handleCreateTransfer(event)">
+                <div class="form-grid two-cols">
+                  <div class="form-field">
+                    <label for="xfer-from-station" class="field-label">From Station *</label>
+                    <select id="xfer-from-station" class="form-control" required>
+                      <option value="">Select station...</option>
+                    </select>
+                  </div>
+                  <div class="form-field">
+                    <label for="xfer-to-station" class="field-label">To Station *</label>
+                    <select id="xfer-to-station" class="form-control" required>
+                      <option value="">Select station...</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-grid two-cols">
+                  <div class="form-field">
+                    <label for="xfer-distance" class="field-label">Walking Distance (meters) *</label>
+                    <input type="number" min="10" max="5000" id="xfer-distance" class="form-control" placeholder="e.g. 350" required />
+                  </div>
+                  <div class="form-field">
+                    <label for="xfer-time" class="field-label">Walking Time (minutes) *</label>
+                    <input type="number" min="1" max="60" id="xfer-time" class="form-control" placeholder="e.g. 5" required />
+                  </div>
+                </div>
+
+                <div class="form-action-row">
+                  <button type="submit" class="btn btn-primary">Register Transfer Link</button>
+                </div>
+                <div id="transfer-feedback" class="feedback-banner is-hidden"></div>
+              </form>
+            </div>
+
+            <!-- All Walking Transfers Table -->
+            <div class="panel-card">
+              <div class="panel-header between">
+                <div>
+                  <h2 class="panel-title">Existing Transfer Links</h2>
+                  <p class="panel-description">All pedestrian interchange connections in STATION_PAIR_TRANSFER. Each registered pair appears twice (both directions).</p>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="fetchAdminTransfersTable()">Refresh</button>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table" id="table-admin-transfers">
+                  <thead>
+                    <tr>
+                      <th>Transfer ID</th>
+                      <th>From Station</th>
+                      <th>To Station</th>
+                      <th>Distance (m)</th>
+                      <th>Walk Time (min)</th>
+                      <th>Direct</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody-admin-transfers">
+                    <tr><td colspan="6" class="table-loading">Loading transfer links...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Admin Section 5: Kiosk Top-Up -->
+          <div id="admin-sec-topup" class="admin-tab-content is-hidden">
+            <div class="panel-card max-w-md">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title">Station Kiosk Card Balance Top-Up</h2>
+                  <p class="panel-description">Directly credit SmartCard wallet balances via PKG_BETTERTRAVEL_ADMIN.PRC_TOPUP_WALLET.</p>
+                </div>
+              </div>
+
+              <form id="form-topup-wallet" onsubmit="handleWalletTopup(event)">
+                <div class="form-field">
+                  <label for="topup-card-number" class="field-label">SmartCard Number *</label>
+                  <input type="text" id="topup-card-number" class="form-control" placeholder="e.g. MC-9901-4412-0001" required />
+                </div>
+
+                <div class="form-grid two-cols">
+                  <div class="form-field">
+                    <label for="topup-credit-amount" class="field-label">Credit Amount ($) *</label>
+                    <input type="number" step="0.50" min="1" max="500" id="topup-credit-amount" class="form-control" placeholder="25.00" value="25.00" required />
+                  </div>
+                  <div class="form-field">
+                    <label for="topup-reference-code" class="field-label">Terminal Reference</label>
+                    <input type="text" id="topup-reference-code" class="form-control" placeholder="KIOSK-01" value="KIOSK-01" />
+                  </div>
+                </div>
+
+                <div class="form-action-row">
+                  <button type="submit" class="btn btn-primary">Credit SmartCard</button>
+                </div>
+                <div id="topup-feedback" class="feedback-banner is-hidden"></div>
+              </form>
+            </div>
+          </div>
+
+        </div><!-- /admin-content-area -->
+
       </div>
+    </section>
 
-    </div>
-  </div>
+  </main>
 
-  <!-- ── Toast Notification ────────────────────────────────────────────────── -->
-  <div id="toast" class="toast hidden"></div>
+  <!-- Global Notification Toast -->
+  <div id="notification-toast" class="toast-card is-hidden"></div>
 
   <script src="js/app.js"></script>
 </body>

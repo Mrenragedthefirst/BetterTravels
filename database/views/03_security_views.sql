@@ -25,7 +25,7 @@ LEFT JOIN (
         af.Reason
     FROM AFFECTEDSTATION af
     JOIN INCIDENT inc ON af.IncidentID = inc.IncidentID
-    WHERE SYSTIMESTAMP BETWEEN inc.StartTime AND NVL(inc.EndTime, SYSTIMESTAMP + INTERVAL '1' DAY)
+    WHERE inc.StartTime <= SYSTIMESTAMP AND (inc.EndTime IS NULL OR inc.EndTime > SYSTIMESTAMP)
 ) ast ON s.StationID = ast.StationID
 WHERE s.IsActive = 1
 WITH READ ONLY;
@@ -69,7 +69,7 @@ LEFT JOIN (
         a.IncidentID
     FROM AFFECTEDSEGMENT a
     JOIN INCIDENT i ON a.IncidentID = i.IncidentID
-    WHERE SYSTIMESTAMP BETWEEN i.StartTime AND NVL(i.EndTime, SYSTIMESTAMP + INTERVAL '1' DAY)
+    WHERE i.StartTime <= SYSTIMESTAMP AND (i.EndTime IS NULL OR i.EndTime > SYSTIMESTAMP)
 ) aff ON seg.SegmentID = aff.SegmentID
 LEFT JOIN INCIDENT inc ON aff.IncidentID = inc.IncidentID
 WHERE seg.IsActive = 1
@@ -97,7 +97,7 @@ JOIN ROUTESTOP rs_from ON s.FromRouteStopID = rs_from.RouteStopID
 JOIN STATION st_from ON rs_from.StationID = st_from.StationID
 JOIN ROUTESTOP rs_to ON s.ToRouteStopID = rs_to.RouteStopID
 JOIN STATION st_to ON rs_to.StationID = st_to.StationID
-WHERE SYSTIMESTAMP BETWEEN inc.StartTime AND NVL(inc.EndTime, SYSTIMESTAMP + INTERVAL '1' DAY)
+WHERE inc.StartTime <= SYSTIMESTAMP AND (inc.EndTime IS NULL OR inc.EndTime > SYSTIMESTAMP)
 UNION ALL
 SELECT 
     inc.IncidentID,
@@ -114,7 +114,7 @@ SELECT
 FROM INCIDENT inc
 JOIN AFFECTEDSTATION aff_stat ON inc.IncidentID = aff_stat.IncidentID
 JOIN STATION st ON aff_stat.StationID = st.StationID
-WHERE SYSTIMESTAMP BETWEEN inc.StartTime AND NVL(inc.EndTime, SYSTIMESTAMP + INTERVAL '1' DAY)
+WHERE inc.StartTime <= SYSTIMESTAMP AND (inc.EndTime IS NULL OR inc.EndTime > SYSTIMESTAMP)
 WITH READ ONLY;
 
 -- 4. User Safe SmartCard & Wallet View (No PII leak)
@@ -138,9 +138,10 @@ LEFT JOIN PASSENGERFARECLASS pfc ON p.PassengerID = pfc.PassengerID
     AND pfc.VerificationStatus = 'Approved'
     AND SYSTIMESTAMP BETWEEN pfc.ValidFrom AND NVL(pfc.ValidTo, SYSTIMESTAMP + INTERVAL '1' DAY)
 LEFT JOIN FARECLASS fc ON pfc.FareClassID = fc.FareClassID AND fc.IsActive = 1
+WHERE sc.IsActive = 1
 WITH READ ONLY;
 
--- 5. User Travel History View
+-- 5. Passenger Travel History
 CREATE OR REPLACE VIEW V_USER_JOURNEY_HISTORY AS
 SELECT 
     jl.JourneyLegID,
